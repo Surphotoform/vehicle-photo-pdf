@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 
 <meta
@@ -10,11 +11,22 @@
 
 <title>Vehicle Photo PDF</title>
 
-<!-- PDF GENERATOR -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 
-<!-- HEIC / HEIF CONVERTER -->
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<!-- PDF LIBRARY -->
+<script
+    src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"
+    onload="pdfLibraryLoaded()"
+    onerror="pdfLibraryFailed()">
+</script>
+
+
+<!-- HEIC CONVERTER -->
+<script
+    src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"
+    onload="heicLibraryLoaded()"
+    onerror="heicLibraryFailed()">
+</script>
+
 
 <style>
 
@@ -23,6 +35,7 @@
 }
 
 body {
+
     font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -38,25 +51,32 @@ body {
     color: #111;
 }
 
+
 .container {
+
     max-width: 700px;
 
     margin: auto;
 }
 
+
 h1 {
+
     text-align: center;
 
     margin-bottom: 8px;
 }
 
+
 .instructions {
+
     text-align: center;
 
     color: #666;
 
     margin-bottom: 20px;
 }
+
 
 .photo-grid {
 
@@ -66,6 +86,7 @@ h1 {
 
     gap: 15px;
 }
+
 
 .photo-box {
 
@@ -79,6 +100,7 @@ h1 {
         0 2px 8px rgba(0,0,0,0.08);
 }
 
+
 .photo-title {
 
     font-weight: 700;
@@ -87,6 +109,7 @@ h1 {
 
     margin-bottom: 10px;
 }
+
 
 .preview {
 
@@ -113,6 +136,7 @@ h1 {
     margin-bottom: 10px;
 }
 
+
 .preview img {
 
     width: 100%;
@@ -122,10 +146,12 @@ h1 {
     object-fit: cover;
 }
 
+
 input[type="file"] {
 
     width: 100%;
 }
+
 
 .button {
 
@@ -148,10 +174,12 @@ input[type="file"] {
     font-weight: 700;
 }
 
+
 .button:disabled {
 
     background: #aaa;
 }
+
 
 .status {
 
@@ -164,15 +192,53 @@ input[type="file"] {
     font-weight: 600;
 }
 
+
+.library-status {
+
+    text-align: center;
+
+    font-size: 12px;
+
+    color: #888;
+
+    margin-top: 8px;
+}
+
+
+@media (max-width: 500px) {
+
+    body {
+        padding: 12px;
+    }
+
+    .photo-grid {
+        gap: 10px;
+    }
+
+    .photo-box {
+        padding: 8px;
+    }
+
+    .photo-title {
+        font-size: 14px;
+    }
+}
+
 </style>
+
 </head>
 
 
 <body>
 
+
 <div class="container">
 
-<h1>Vehicle Photos</h1>
+
+<h1>
+Vehicle Photos
+</h1>
+
 
 <div class="instructions">
 Take one photo of each vehicle view.
@@ -192,8 +258,7 @@ FRONT
 
 <div
     class="preview"
-    id="preview0"
->
+    id="preview0">
 No photo
 </div>
 
@@ -208,7 +273,7 @@ No photo
 
 
 
-<!-- LEFT SIDE -->
+<!-- LEFT -->
 
 <div class="photo-box">
 
@@ -218,8 +283,7 @@ LEFT SIDE
 
 <div
     class="preview"
-    id="preview1"
->
+    id="preview1">
 No photo
 </div>
 
@@ -234,7 +298,7 @@ No photo
 
 
 
-<!-- RIGHT SIDE -->
+<!-- RIGHT -->
 
 <div class="photo-box">
 
@@ -244,8 +308,7 @@ RIGHT SIDE
 
 <div
     class="preview"
-    id="preview2"
->
+    id="preview2">
 No photo
 </div>
 
@@ -270,8 +333,7 @@ REAR
 
 <div
     class="preview"
-    id="preview3"
->
+    id="preview3">
 No photo
 </div>
 
@@ -292,18 +354,24 @@ No photo
     class="button"
     id="createButton"
     onclick="createPDF()"
-    disabled
->
+    disabled>
 CREATE PDF
 </button>
 
 
 <div
     class="status"
-    id="status"
->
-Please add all 4 photos.
+    id="status">
+Loading...
 </div>
+
+
+<div
+    class="library-status"
+    id="libraryStatus">
+Checking PDF system...
+</div>
+
 
 </div>
 
@@ -312,9 +380,106 @@ Please add all 4 photos.
 <script>
 
 
-// --------------------------------------------------
-// PHOTO STORAGE
-// --------------------------------------------------
+// ==================================================
+// LIBRARY STATUS
+// ==================================================
+
+let pdfReady = false;
+
+let heicReady = false;
+
+
+function pdfLibraryLoaded() {
+
+    if (
+        window.jspdf &&
+        window.jspdf.jsPDF
+    ) {
+
+        pdfReady = true;
+
+        updateLibraryStatus();
+
+    } else {
+
+        pdfLibraryFailed();
+    }
+}
+
+
+function pdfLibraryFailed() {
+
+    pdfReady = false;
+
+    updateLibraryStatus();
+}
+
+
+function heicLibraryLoaded() {
+
+    heicReady = true;
+
+    updateLibraryStatus();
+}
+
+
+function heicLibraryFailed() {
+
+    heicReady = false;
+
+    updateLibraryStatus();
+}
+
+
+function updateLibraryStatus() {
+
+    const element =
+        document.getElementById(
+            "libraryStatus"
+        );
+
+
+    if (pdfReady && heicReady) {
+
+        element.textContent =
+            "PDF system ready ✓";
+
+        element.style.color =
+            "green";
+
+        updateButton();
+
+        return;
+    }
+
+
+    if (!pdfReady) {
+
+        element.textContent =
+            "PDF system could not load.";
+
+        element.style.color =
+            "red";
+
+        return;
+    }
+
+
+    if (!heicReady) {
+
+        element.textContent =
+            "Photo converter could not load.";
+
+        element.style.color =
+            "red";
+    }
+}
+
+
+
+// ==================================================
+// PHOTOS
+// ==================================================
 
 let photoFiles = [
     null,
@@ -333,20 +498,22 @@ const labels = [
 
 
 
-// --------------------------------------------------
-// ADD PHOTO
-// --------------------------------------------------
+function handlePhoto(
+    input,
+    index
+) {
 
-function handlePhoto(input, index) {
+    const file =
+        input.files[0];
 
-    const file = input.files[0];
 
     if (!file) {
         return;
     }
 
 
-    photoFiles[index] = file;
+    photoFiles[index] =
+        file;
 
 
     const preview =
@@ -359,14 +526,20 @@ function handlePhoto(input, index) {
 
 
     const img =
-        document.createElement("img");
+        document.createElement(
+            "img"
+        );
 
 
     img.src =
-        URL.createObjectURL(file);
+        URL.createObjectURL(
+            file
+        );
 
 
-    preview.appendChild(img);
+    preview.appendChild(
+        img
+    );
 
 
     updateButton();
@@ -374,9 +547,9 @@ function handlePhoto(input, index) {
 
 
 
-// --------------------------------------------------
-// ENABLE BUTTON WHEN FOUR PHOTOS EXIST
-// --------------------------------------------------
+// ==================================================
+// BUTTON
+// ==================================================
 
 function updateButton() {
 
@@ -386,36 +559,62 @@ function updateButton() {
         );
 
 
-    const ready =
+    const allPhotos =
         photoFiles.every(
             file => file !== null
         );
 
 
-    button.disabled = !ready;
+    button.disabled =
+        !(
+            allPhotos &&
+            pdfReady &&
+            heicReady
+        );
 
 
-    if (ready) {
-
+    const status =
         document.getElementById(
             "status"
-        ).textContent =
-            "All 4 photos are ready.";
+        );
 
-    } else {
 
-        document.getElementById(
-            "status"
-        ).textContent =
-            "Please add all 4 photos.";
+    if (!pdfReady) {
+
+        status.textContent =
+            "Loading PDF system...";
+
+        return;
     }
+
+
+    if (!heicReady) {
+
+        status.textContent =
+            "Loading photo converter...";
+
+        return;
+    }
+
+
+    if (!allPhotos) {
+
+        status.textContent =
+            "Please add all 4 photos.";
+
+        return;
+    }
+
+
+    status.textContent =
+        "All 4 photos are ready.";
 }
 
 
 
-// --------------------------------------------------
-// CONVERT HEIC TO JPEG
-// --------------------------------------------------
+// ==================================================
+// HEIC CONVERSION
+// ==================================================
 
 async function convertHEIC(file) {
 
@@ -447,13 +646,19 @@ async function convertHEIC(file) {
 
             blob: file,
 
-            toType: "image/jpeg",
+            toType:
+                "image/jpeg",
 
-            quality: 0.85
+            quality:
+                0.85
         });
 
 
-    if (Array.isArray(converted)) {
+    if (
+        Array.isArray(
+            converted
+        )
+    ) {
 
         return converted[0];
     }
@@ -464,18 +669,21 @@ async function convertHEIC(file) {
 
 
 
-// --------------------------------------------------
-// CONVERT PHOTO TO JPEG
-// --------------------------------------------------
+// ==================================================
+// IMAGE PREPARATION
+// ==================================================
 
 async function prepareImage(file) {
 
     const usableFile =
-        await convertHEIC(file);
+        await convertHEIC(
+            file
+        );
 
 
     return new Promise(
         (resolve, reject) => {
+
 
             const reader =
                 new FileReader();
@@ -484,12 +692,14 @@ async function prepareImage(file) {
             reader.onload =
                 function(event) {
 
+
                     const img =
                         new Image();
 
 
                     img.onload =
                         function() {
+
 
                             const maxSize =
                                 2500;
@@ -498,25 +708,36 @@ async function prepareImage(file) {
                             let width =
                                 img.width;
 
+
                             let height =
                                 img.height;
 
 
                             if (
-                                width > maxSize ||
-                                height > maxSize
+                                width >
+                                maxSize ||
+                                height >
+                                maxSize
                             ) {
+
 
                                 const scale =
                                     Math.min(
-                                        maxSize / width,
-                                        maxSize / height
+
+                                        maxSize /
+                                        width,
+
+                                        maxSize /
+                                        height
                                     );
 
 
-                                width *= scale;
+                                width *=
+                                    scale;
 
-                                height *= scale;
+
+                                height *=
+                                    scale;
                             }
 
 
@@ -529,40 +750,52 @@ async function prepareImage(file) {
                             canvas.width =
                                 width;
 
+
                             canvas.height =
                                 height;
 
 
-                            const context =
+                            const ctx =
                                 canvas.getContext(
                                     "2d"
                                 );
 
 
-                            context.drawImage(
+                            ctx.drawImage(
+
                                 img,
+
                                 0,
+
                                 0,
+
                                 width,
+
                                 height
                             );
 
 
                             const jpeg =
                                 canvas.toDataURL(
+
                                     "image/jpeg",
+
                                     0.85
                                 );
 
 
                             resolve({
 
-                                data: jpeg,
+                                data:
+                                    jpeg,
 
-                                width: width,
+                                width:
+                                    width,
 
-                                height: height
+                                height:
+                                    height
                             });
+
                         };
 
 
@@ -571,7 +804,7 @@ async function prepareImage(file) {
 
                             reject(
                                 new Error(
-                                    "The photo could not be read."
+                                    "The image could not be read."
                                 )
                             );
                         };
@@ -602,11 +835,12 @@ async function prepareImage(file) {
 
 
 
-// --------------------------------------------------
+// ==================================================
 // CREATE PDF
-// --------------------------------------------------
+// ==================================================
 
 async function createPDF() {
+
 
     const status =
         document.getElementById(
@@ -620,15 +854,28 @@ async function createPDF() {
         );
 
 
-    button.disabled = true;
+    button.disabled =
+        true;
 
 
     try {
 
 
-        // ------------------------------------------
-        // CHECK PHOTOS
-        // ------------------------------------------
+        if (!pdfReady) {
+
+            throw new Error(
+                "The PDF library is not available."
+            );
+        }
+
+
+        if (!heicReady) {
+
+            throw new Error(
+                "The photo converter is not available."
+            );
+        }
+
 
         if (
             !photoFiles.every(
@@ -641,27 +888,6 @@ async function createPDF() {
             );
         }
 
-
-
-        // ------------------------------------------
-        // CHECK PDF LIBRARY
-        // ------------------------------------------
-
-        if (
-            !window.jspdf ||
-            !window.jspdf.jsPDF
-        ) {
-
-            throw new Error(
-                "The PDF library did not load."
-            );
-        }
-
-
-
-        // ------------------------------------------
-        // CREATE PDF
-        // ------------------------------------------
 
         const {
             jsPDF
@@ -682,13 +908,9 @@ async function createPDF() {
             });
 
 
-
-        // ------------------------------------------
-        // PAGE DIMENSIONS
-        // ------------------------------------------
-
         const pageWidth =
             215.9;
+
 
         const pageHeight =
             279.4;
@@ -696,6 +918,7 @@ async function createPDF() {
 
         const margin =
             10;
+
 
         const gap =
             4;
@@ -718,10 +941,6 @@ async function createPDF() {
 
 
 
-        // ------------------------------------------
-        // PROCESS FOUR PHOTOS
-        // ------------------------------------------
-
         for (
             let i = 0;
             i < 4;
@@ -741,35 +960,33 @@ async function createPDF() {
                 );
 
 
-
-            // --------------------------------------
-            // POSITION
-            // --------------------------------------
-
             const column =
                 i % 2;
 
 
             const row =
-                Math.floor(i / 2);
+                Math.floor(
+                    i / 2
+                );
 
 
             const cellX =
                 margin +
                 column *
-                (cellWidth + gap);
+                (
+                    cellWidth +
+                    gap
+                );
 
 
             const cellY =
                 margin +
                 row *
-                (cellHeight + gap);
+                (
+                    cellHeight +
+                    gap
+                );
 
-
-
-            // --------------------------------------
-            // LABEL
-            // --------------------------------------
 
             pdf.setFontSize(
                 11
@@ -789,11 +1006,6 @@ async function createPDF() {
             );
 
 
-
-            // --------------------------------------
-            // IMAGE BOX
-            // --------------------------------------
-
             const imageX =
                 cellX;
 
@@ -809,11 +1021,6 @@ async function createPDF() {
             const imageHeight =
                 cellHeight - 9;
 
-
-
-            // --------------------------------------
-            // PRESERVE IMAGE RATIO
-            // --------------------------------------
 
             const imageRatio =
                 image.width /
@@ -831,7 +1038,8 @@ async function createPDF() {
 
 
             if (
-                imageRatio > boxRatio
+                imageRatio >
+                boxRatio
             ) {
 
                 drawWidth =
@@ -854,11 +1062,6 @@ async function createPDF() {
             }
 
 
-
-            // --------------------------------------
-            // CENTER IMAGE
-            // --------------------------------------
-
             const drawX =
                 imageX +
                 (
@@ -874,11 +1077,6 @@ async function createPDF() {
                     drawHeight
                 ) / 2;
 
-
-
-            // --------------------------------------
-            // ADD IMAGE
-            // --------------------------------------
 
             pdf.addImage(
 
@@ -900,11 +1098,6 @@ async function createPDF() {
             );
 
 
-
-            // --------------------------------------
-            // BORDER
-            // --------------------------------------
-
             pdf.setDrawColor(
                 180
             );
@@ -923,17 +1116,14 @@ async function createPDF() {
         }
 
 
-
-        // ------------------------------------------
-        // CREATE PDF FILE
-        // ------------------------------------------
-
         status.textContent =
             "Creating PDF...";
 
 
         const blob =
-            pdf.output("blob");
+            pdf.output(
+                "blob"
+            );
 
 
         const pdfFile =
@@ -951,16 +1141,19 @@ async function createPDF() {
 
 
 
-        // ------------------------------------------
-        // PHONE SHARE
-        // ------------------------------------------
+        // iPhone / Android share
 
         if (
+
             navigator.share &&
+
             navigator.canShare &&
+
             navigator.canShare({
-                files: [pdfFile]
+                files:
+                    [pdfFile]
             })
+
         ) {
 
 
@@ -988,9 +1181,7 @@ async function createPDF() {
         } else {
 
 
-            // --------------------------------------
-            // DOWNLOAD FALLBACK
-            // --------------------------------------
+            // Desktop fallback
 
             const url =
                 URL.createObjectURL(
@@ -1026,7 +1217,7 @@ async function createPDF() {
 
 
             setTimeout(
-                () => {
+                function() {
 
                     URL.revokeObjectURL(
                         url
@@ -1051,28 +1242,35 @@ async function createPDF() {
 
 
         status.textContent =
-            "PDF could not be created: " +
-            error.message;
+            "PDF could not be created.";
 
 
         alert(
 
-            "The PDF could not be created.\n\n" +
+            "PDF could not be created.\n\n" +
+
             error.message
         );
 
 
     } finally {
 
-        button.disabled = false;
+        button.disabled =
+            false;
+
+        updateButton();
     }
 }
 
 
+// ==================================================
+// INITIALIZE
+// ==================================================
 
 updateButton();
 
 </script>
+
 
 </body>
 </html>
