@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Vehicle Photo PDF</title>
+
+<!-- PDF library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+
+<!-- HEIC/HEIF converter -->
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f2f2f7;
+        margin: 0;
+        padding: 20px;
+        color: #111;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .instructions {
+        text-align: center;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .photo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .photo-box {
+        background: white;
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .photo-title {
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .preview {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background: #e5e5ea;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #777;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    input[type="file"] {
+        width: 100%;
+    }
+
+    .button {
+        width: 100%;
+        margin-top: 20px;
+        padding: 16px;
+        border: none;
+        border-radius: 14px;
+        background: #007aff;
+        color: white;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .button:disabled {
+        background: #aaa;
+    }
+
+    .status {
+        text-align: center;
+        margin-top: 15px;
+        min-height: 24px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 500px) {
+        body {
+            padding: 12px;
+        }
+
+        .photo-grid {
+            gap: 10px;
+        }
+
+        .photo-box {
+            padding: 8px;
+        }
+
+        .photo-title {
+            font-size: 14px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Vehicle Photos</h1>
+
+    <div class="instructions">
+        Please take or select one photo for each vehicle view.
+    </div>
+
+    <div class="photo-grid">
+
+        <!-- FRONT -->
+        <div class="photo-box">
+            <div class="photo-title">FRONT</div>
+
+            <div class="preview" id="preview0">
+                No photo
+            </div>
+
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onchange="handlePhoto(this, 0)"
+            >
+        </div>
+
+        <!-- LEFT SIDE -->
+        <div class="photo-box">
+            <div class="photo-title">LEFT SIDE</div>
+
+            <div class="preview" id="preview1">
+                No photo
+            </div>
+
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onchange="handlePhoto(this, 1)"
+            >
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <div class="photo-box">
+            <div class="photo-title">RIGHT SIDE</div>
+
+            <div class="preview" id="preview2">
+                No photo
+            </div>
+
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onchange="handlePhoto(this, 2)"
+            >
+        </div>
+
+        <!-- REAR -->
+        <div class="photo-box">
+            <div class="photo-title">REAR</div>
+
+            <div class="preview" id="preview3">
+                No photo
+            </div>
+
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onchange="handlePhoto(this, 3)"
+            >
+        </div>
+
+    </div>
+
+    <button
+        class="button"
+        id="createButton"
+        onclick="createPDF()"
+    >
+        CREATE PDF
+    </button>
+
+    <div class="status" id="status"></div>
+
+</div>
+
+
+<script>
+
+let photoFiles = [null, null, null, null];
+
+const labels = [
+    "FRONT",
+    "LEFT SIDE",
+    "RIGHT SIDE",
+    "REAR"
+];
+
+
+// --------------------------------------------------
+// PHOTO SELECTION
+// --------------------------------------------------
+
+function handlePhoto(input, index) {
+
+    const file = input.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    photoFiles[index] = file;
+
+    const preview = document.getElementById("preview" + index);
+
+    preview.innerHTML = "";
+
+    const img = document.createElement("img");
+
+    img.src = URL.createObjectURL(file);
+
+    preview.appendChild(img);
+
+    updateButton();
+}
+
+
+// --------------------------------------------------
+// CHECK IF ALL FOUR PHOTOS EXIST
+// --------------------------------------------------
+
+function updateButton() {
+
+    const button = document.getElementById("createButton");
+
+    const allPhotosSelected =
+        photoFiles.every(file => file !== null);
+
+    button.disabled = !allPhotosSelected;
+
+    if (allPhotosSelected) {
+        document.getElementById("status").textContent =
+            "All 4 photos are ready.";
+    } else {
+        document.getElementById("status").textContent =
+            "Please add all 4 photos.";
+    }
+}
+
+
+// --------------------------------------------------
+// CONVERT HEIC / HEIF IF NECESSARY
+// --------------------------------------------------
+
+async function convertIfNeeded(file) {
+
+    const fileName = file.name.toLowerCase();
+
+    const isHEIC =
+        file.type === "image/heic" ||
+        file.type === "image/heif" ||
+        fileName.endsWith(".heic") ||
+        fileName.endsWith(".heif");
+
+    if (!isHEIC) {
+        return file;
+    }
+
+    document.getElementById("status").textContent =
+        "Converting iPhone photo...";
+
+    try {
+
+        const converted = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.85
+        });
+
+        if (Array.isArray(converted)) {
+            return converted[0];
+        }
+
+        return converted;
+
+    } catch (error) {
+
+        console.error("HEIC conversion failed:", error);
+
+        throw new Error(
+            "This iPhone photo could not be converted."
+        );
+    }
+}
+
+
+// --------------------------------------------------
+// CONVERT IMAGE TO JPEG
+// --------------------------------------------------
+
+async function imageToJPEG(file) {
+
+    const convertedFile = await convertIfNeeded(file);
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+
+            const img = new Image();
+
+            img.onload = function() {
+
+                const maxSize = 2500;
+
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxSize || height > maxSize) {
+
+                    const scale =
+                        Math.min(
+                            maxSize / width,
+                            maxSize / height
+                        );
+
+                    width *= scale;
+                    height *= scale;
+                }
+
+                const canvas = document.createElement("canvas");
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext("2d");
+
+                ctx.drawImage(
+                    img,
+                    0,
+                    0,
+                    width,
+                    height
+                );
+
+                const jpegData =
+                    canvas.toDataURL(
+                        "image/jpeg",
+                        0.85
+                    );
+
+                resolve({
+                    data: jpegData,
+                    width: width,
+                    height: height
+                });
+            };
+
+            img.onerror = function() {
+                reject(
+                    new Error(
+                        "The image could not be read."
+                    )
+                );
+            };
+
+            img.src = event.target.result;
+        };
+
+        reader.onerror = function() {
+            reject(
+                new Error(
+                    "The photo could not be loaded."
+                )
+            );
+        };
+
+        reader.readAsDataURL(convertedFile);
+    });
+}
+
+
+// --------------------------------------------------
+// CREATE PDF
+// --------------------------------------------------
+
+async function createPDF() {
+
+    const status =
+        document.getElementById("status");
+
+    const button =
+        document.getElementById("createButton");
+
+    button.disabled = true;
+
+    status.textContent =
+        "Preparing your photos...";
+
+    try {
+
+        // Make sure all four photos exist
+
+        if (!photoFiles.every(file => file !== null)) {
+
+            throw new Error(
+                "Please select all 4 photos."
+            );
+        }
+
+
+        // Make sure jsPDF loaded
+
+        if (
+            !window.jspdf ||
+            !window.jspdf.jsPDF
+        ) {
+
+            throw new Error(
+                "The PDF library did not load. Please check your internet connection and try again."
+            );
+        }
+
+
+        const { jsPDF } = window.jspdf;
+
+
+        // Create US Letter portrait PDF
+
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "letter"
+        });
+
+
+        // Letter size
+
+        const pageWidth = 215.9;
+        const pageHeight = 279.4;
+
+
+        // Layout
+
+        const margin = 10;
+        const gap = 4;
+
+        const cellWidth =
+            (pageWidth - (margin * 2) - gap) / 2;
+
+        const cellHeight =
+            (pageHeight - (margin * 2) - gap) / 2;
+
+
+        // Process each photo
+
+        for (let i = 0; i < 4; i++) {
+
+            status.textContent =
+                "Processing photo " +
+                (i + 1) +
+                " of 4...";
+
+
+            const image =
+                await imageToJPEG(
+                    photoFiles[i]
+                );
+
+
+            // Determine cell position
+
+            const column = i % 2;
+
+            const row = Math.floor(i / 2);
+
+            const cellX =
+                margin +
+                column * (cellWidth + gap);
+
+            const cellY =
+                margin +
+                row * (cellHeight + gap);
+
+
+            // Label
+
+            pdf.setFontSize(11);
+
+            pdf.setFont(undefined, "bold");
+
+            pdf.text(
+                labels[i],
+                cellX,
+                cellY + 6
+            );
+
+
+            // Image area
+
+            const imageX = cellX;
+
+            const imageY = cellY + 9;
+
+            const imageWidth = cellWidth;
+
+            const imageHeight =
+                cellHeight - 9;
+
+
+            // Keep the original image ratio
+
+            const imageRatio =
+                image.width / image.height;
+
+            const boxRatio =
+                imageWidth / imageHeight;
+
+            let drawWidth;
+            let drawHeight;
+
+            if (imageRatio > boxRatio) {
+
+                drawWidth = imageWidth;
+
+                drawHeight =
+                    imageWidth / imageRatio;
+
+            } else {
+
+                drawHeight = imageHeight;
+
+                drawWidth =
+                    imageHeight * imageRatio;
+            }
+
+
+            // Center image
+
+            const drawX =
+                imageX +
+                (imageWidth - drawWidth) / 2;
+
+            const drawY =
+                imageY +
+                (imageHeight - drawHeight) / 2;
+
+
+            // Add image
+
+            pdf.addImage(
+                image.data,
+                "JPEG",
+                drawX,
+                drawY,
+                drawWidth,
+                drawHeight,
+                undefined,
+                "MEDIUM"
+            );
+
+
+            // Border around photo
+
+            pdf.setDrawColor(180);
+
+            pdf.rect(
+                imageX,
+                imageY,
+                imageWidth,
+                imageHeight
+            );
+        }
+
+
+        status.textContent =
+            "Creating PDF...";
+
+
+        // Create PDF blob
+
+        const pdfBlob =
+            pdf.output("blob");
+
+
+        const pdfFile =
+            new File(
+                [pdfBlob],
+                "Vehicle_Photos.pdf",
+                {
+                    type: "application/pdf"
+                }
+            );
+
+
+        // --------------------------------------------------
+        // MOBILE SHARE
+        // --------------------------------------------------
+
+        if (
+            navigator.share &&
+            navigator.canShare &&
+            navigator.canShare({
+                files: [pdfFile]
+            })
+        ) {
+
+            status.textContent =
+                "Opening share menu...";
+
+            await navigator.share({
+                files: [pdfFile],
+                title: "Vehicle Photos",
+                text: "Vehicle photos PDF"
+            });
+
+            status.textContent =
+                "PDF ready.";
+
+        } else {
+
+            // --------------------------------------------------
+            // FALLBACK DOWNLOAD
+            // --------------------------------------------------
+
+            const url =
+                URL.createObjectURL(pdfBlob);
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+
+            link.download =
+                "Vehicle_Photos.pdf";
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 5000);
+
+            status.textContent =
+                "PDF created successfully.";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "PDF could not be created: " +
+            error.message;
+
+        alert(
+            "The PDF could not be created.\n\n" +
+            error.message
+        );
+
+    } finally {
+
+        button.disabled = false;
+    }
+}
+
+
+// --------------------------------------------------
+// INITIAL BUTTON STATE
+// --------------------------------------------------
+
+updateButton();
+
+</script>
+
+</body>
+</html>
